@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.supervisions.modules.dao.ITenUserDao">
+
+    <resultMap type="TenUser" id="TenUserResult">
+        <id     property="id"	column="id"	/>
+        <result property="createTime"	column="create_time"	/>
+        <result property="version"	column="version"	/>
+		<result property="openId"	column="open_id"	/>
+        </resultMap>
+
+    <select id="selectUserByOpenId" parameterType="String" resultMap="TenUserResult">
+		select *
+		from ten_user
+		where open_id = #{openId} limit 1
+	</select>
+
+    <select id="selectUserById" parameterType="Long" resultMap="TenUserResult">
+		select *
+		from ten_user
+		where id = #{id}
+	</select>
+
+    <insert id="insert" parameterType="TenUser">
+        <selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
+            select nextval('ten_user_id');
+        </selectKey>
+        insert into ten_user(<trim suffixOverrides=",">
+        id,
+        create_time,
+        open_id
+    </trim>
+        )values(<trim suffixOverrides=",">
+        #{id},
+        #{createTime},
+        #{openId}
+    </trim>
+        )
+    </insert>
+
+</mapper>

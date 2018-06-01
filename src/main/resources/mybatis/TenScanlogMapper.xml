@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.supervisions.modules.dao.ITenScanlogDao">
+
+    <resultMap type="TenScanlog" id="TenScanlogResult">
+        <id     property="id"	column="id"	/>
+        <result property="createTime"	column="create_time"	/>
+		<result property="deviceId"	column="device_id"	/>
+        <result property="leftId"	column="left_id"	/>
+        <result property="rightId"	column="right_id"	/>
+        </resultMap>
+
+    <insert id="insert" parameterType="TenScanlog">
+        <selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
+            select nextval('ten_scanlog_id');
+        </selectKey>
+        insert into ten_scan_log(<trim suffixOverrides=",">
+        id,
+        create_time,
+		device_id,
+        left_id,
+        right_id
+        </trim>
+        )values(<trim suffixOverrides=",">
+        #{id},
+        #{createTime},
+		#{deviceId},
+        #{leftId},
+        #{rightId}
+        </trim>
+        )
+    </insert>
+
+</mapper>
