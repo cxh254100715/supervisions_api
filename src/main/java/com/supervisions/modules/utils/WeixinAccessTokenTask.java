@@ -30,8 +30,8 @@ public class WeixinAccessTokenTask {
         } catch (Exception e) {
             logger.error("获取微信adcessToken出错，信息如下");
             e.printStackTrace();
-            this.getWeixinAccessToken();
             // 此处可能陷入死循环
+            //this.getWeixinAccessToken();
         }
     }
 }
