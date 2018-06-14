@@ -3,17 +3,19 @@ package com.supervisions.modules.controller;
 import com.supervisions.framework.web.mapper.Result;
 import com.supervisions.modules.mapper.Versions;
 import com.supervisions.modules.service.IAppService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 接口
  */
-@Controller
+@RestController
 @RequestMapping("/app")
 public class AppController
 {
@@ -23,10 +25,13 @@ public class AppController
     /**
      * app接口获取版本
      */
+    @ApiOperation(value="获取带参数二维码", notes="根据设备id获取二维码")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "type", value = "类型（0:Android 1:box）", required = true, dataType = "int", paramType = "query"),
+            @ApiImplicitParam(name = "versionCode", value = "版本号", required = true, dataType = "string", paramType = "query")
+    })
     @GetMapping("/checkVersionUpdate")
-    @Transactional(rollbackFor = Exception.class)
-    @ResponseBody
-    public Result checkVersionUpdate(Integer type, String versionCode)
+    public Result checkVersionUpdate(@RequestParam(required = true) Integer type, @RequestParam(required = true) String versionCode)
     {
         try
         {

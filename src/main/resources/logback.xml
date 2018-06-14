@@ -19,7 +19,7 @@
 			<maxHistory>60</maxHistory>
 		</rollingPolicy>
 		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{80} - %msg%n</pattern>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{80} - [%method,%line] - %msg%n</pattern>
 		</encoder>
 	</appender>
 	

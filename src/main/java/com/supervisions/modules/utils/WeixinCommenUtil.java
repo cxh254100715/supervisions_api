@@ -28,8 +28,8 @@ public class WeixinCommenUtil
         String requestUrl = url.replace("APPID", appid).replace("APPSECRET", appsecret);
         //创建一个json对象
         String result = RequestUtils.httpsRequest(requestUrl, "GET", null);
+        logger.info(result);
         JSONObject json = JSONObject.fromObject(result);
-        System.out.println("获取到的json格式的Token为:" + json);
         //判断json是否为空
         if (json != null)
         {
@@ -45,7 +45,7 @@ public class WeixinCommenUtil
             {
                 token = null;
                 e.printStackTrace();
-                System.out.println("系统出错了！");
+                logger.info("系统出错了！");
             }
         }
         else

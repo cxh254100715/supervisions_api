@@ -10,17 +10,17 @@ public class TenScanlog extends DataEntity
 {
 
 	/** 设备id */
-    private String deviceId;
+    private Long deviceId;
 	/** 左边用户id */
     private Long leftId;
 	/** 右边用户id */
     private Long rightId;
 
-    public String getDeviceId(){
+    public Long getDeviceId(){
        return deviceId ;
     }
 	
-    public void setDeviceId(String deviceId){
+    public void setDeviceId(Long deviceId){
        this.deviceId = deviceId;
     }
     public Long getLeftId(){

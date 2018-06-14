@@ -5,27 +5,28 @@ import com.google.gson.JsonParser;
 import com.supervisions.common.constant.WeixinConstant;
 import com.supervisions.common.utils.CheckoutUtils;
 import com.supervisions.common.utils.RequestUtils;
+import com.supervisions.common.utils.StringUtils;
 import com.supervisions.common.utils.WechatMessageUtils;
+import com.supervisions.framework.web.mapper.AccessToken;
 import com.supervisions.framework.web.mapper.TextMessage;
+import com.supervisions.framework.web.service.RedisService;
 import com.supervisions.modules.mapper.TenDevice;
 import com.supervisions.modules.mapper.TenScanlog;
 import com.supervisions.modules.mapper.TenUser;
 import com.supervisions.modules.service.ITenDeviceService;
 import com.supervisions.modules.service.ITenScanlogService;
 import com.supervisions.modules.service.ITenUserService;
-import com.supervisions.modules.utils.WeixinAccessTokenTask;
+import com.supervisions.modules.utils.WeixinCommenUtil;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -34,8 +35,8 @@ import java.util.Map;
 /**
  * 微信接口
  */
-@Controller
-@RequestMapping(value = "/wx/")
+@RestController
+@RequestMapping("/wx")
 public class WeixinController {
 
     private static final Logger log = LoggerFactory.getLogger(WeixinController.class);
@@ -46,17 +47,18 @@ public class WeixinController {
     private ITenUserService tenUserService;
     @Autowired
     private ITenScanlogService tenScanlogService;
+    @Autowired
+    private RedisService redisService;
 
     /**
      * 公众号token验证
      */
-    @RequestMapping(value = "checkoutToken", method = { RequestMethod.GET,RequestMethod.POST })
-    @ResponseBody
+    @ApiIgnore//使用该注解忽略这个API
+    @RequestMapping(value = "/checkoutToken", method = { RequestMethod.GET,RequestMethod.POST })
     public void checkoutToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
         response.setContentType("text/html;charset=utf-8");
         boolean isGet = request.getMethod().toLowerCase().equals("get");
         PrintWriter print = null;
-        System.out.println(isGet);
         if (isGet) {
             // 微信加密签名
             String signature = request.getParameter("signature");
@@ -87,18 +89,25 @@ public class WeixinController {
     /**
      * 获取带参数二维码
      */
-    @RequestMapping(value = "loginqr", method = RequestMethod.GET)
-    @ResponseBody
-    public Map<String,Object> loginqr(String deviceid) {
+    @ApiOperation(value="获取带参数二维码", notes="根据设备id获取二维码")
+    @ApiImplicitParam(name = "deviceid", value = "设备id", required = true, dataType = "String", paramType = "query")
+    @GetMapping(value = "/loginqr")
+    public Map<String,Object> loginqr(@RequestParam(required = true) String deviceid) {
         Map<String,Object> map = new HashMap<>();
         try {
+            if(!StringUtils.isEmpty(deviceid)&&deviceid.indexOf("-")==-1){
+                map.put("qr", "参数错误！");
+                map.put("code",2);
+                return map;
+            }
+
             // 获取临时二维码url
-            String qrcodeUrl = WeixinConstant.QRCODE.replace("TOKEN", WeixinAccessTokenTask.WXAccessToken);
-            String json = "{\"expire_seconds\": 604800, \"action_name\": \"QR_STR_SCENE\", \"action_info\": {\"scene\": {\"scene_str\": \""+deviceid+"\"}}}";
+            String qrcodeUrl = WeixinConstant.QRCODE.replace("TOKEN", getNewAccessToken());
+            String json = "{\"expire_seconds\": 86400, \"action_name\": \"QR_STR_SCENE\", \"action_info\": {\"scene\": {\"scene_str\": \""+deviceid+"\"}}}";
             String result = RequestUtils.httpsRequest(qrcodeUrl, "POST", json);
+            log.info(result);
             JsonObject jsonObject = new JsonParser().parse(result).getAsJsonObject();
             String ticket = jsonObject.get("ticket").getAsString();
-            System.out.println(ticket);
             String ticketUrl = "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=" + ticket;
 
             String[] strs = deviceid.split("-");
@@ -114,7 +123,7 @@ public class WeixinController {
                 tenDevice.setRightId(null);
                 int count = tenDeviceService.save(tenDevice);
                 if(count<1){
-                    map.put("qr", "服务器开小差啦，请稍后再试！");
+                    map.put("qr", "服务器开小差啦。请稍后再试！");
                     map.put("code",2);
                     return map;
                 }
@@ -122,7 +131,6 @@ public class WeixinController {
             // 返回数据
             map.put("qr", ticketUrl);
             map.put("code",0);
-            log.info(map.toString());
             return map;
         } catch (Exception e) {
             log.error(e.getMessage(),e);
@@ -135,30 +143,51 @@ public class WeixinController {
     /**
      * 返回用户信息
      */
-    @RequestMapping(value = "userinfo", method = RequestMethod.GET)
-    @ResponseBody
-    public Map<String,Object> userinfo(String deviceid) {
+    @ApiOperation(value="获取微信用户信息", notes="根据设备id获取登录的微信用户信息")
+    @ApiImplicitParam(name = "deviceid", value = "设备id", required = true, dataType = "String", paramType = "query")
+    @GetMapping(value = "/userinfo")
+    public Map<String,Object> userinfo(@RequestParam(required = true) String deviceid) {
         try {
             Map<String,Object> map = new HashMap<>();
             TenDevice tenDevice = tenDeviceService.selectDeviceByDeviceId(deviceid);
             if(tenDevice!=null){
                 if(tenDevice.getLeftId()!=null){
                     String openId = tenUserService.selectUserById(tenDevice.getLeftId()).getOpenId();
-                    String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", WeixinAccessTokenTask.WXAccessToken).replace("OPENID", openId);
-                    String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
-                    JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
-                    String headimgurl = jsonObject1.get("headimgurl").getAsString();
-                    String nickname = jsonObject1.get("nickname").getAsString();
+                    String headimgurl = "";
+                    String nickname = "";
+                    if(redisService.exists(openId)){
+                        headimgurl = redisService.hmGet(openId,"face").toString();
+                        nickname = redisService.hmGet(openId,"nickName").toString();
+                    }else{
+                        String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", openId);
+                        String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
+                        log.info(userInfoResult);
+                        JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
+                        headimgurl = jsonObject1.get("headimgurl").getAsString();
+                        nickname = jsonObject1.get("nickname").getAsString();
+                        redisService.hmSet(openId,"face",headimgurl,7200l);
+                        redisService.hmSet(openId,"nickName",nickname,7200l);
+                    }
                     map.put("aFace", headimgurl);
                     map.put("aNickName", nickname);
                 }
                 if(tenDevice.getRightId()!=null){
                     String openId = tenUserService.selectUserById(tenDevice.getRightId()).getOpenId();
-                    String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", WeixinAccessTokenTask.WXAccessToken).replace("OPENID", openId);
-                    String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
-                    JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
-                    String headimgurl = jsonObject1.get("headimgurl").getAsString();
-                    String nickname = jsonObject1.get("nickname").getAsString();
+                    String headimgurl = "";
+                    String nickname = "";
+                    if(redisService.exists(openId)){
+                        headimgurl = redisService.hmGet(openId,"face").toString();
+                        nickname = redisService.hmGet(openId,"nickName").toString();
+                    }else{
+                        String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", openId);
+                        String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
+                        log.info(userInfoResult);
+                        JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
+                        headimgurl = jsonObject1.get("headimgurl").getAsString();
+                        nickname = jsonObject1.get("nickname").getAsString();
+                        redisService.hmSet(openId,"face",headimgurl,7200l);
+                        redisService.hmSet(openId,"nickName",nickname,7200l);
+                    }
                     map.put("bFace", headimgurl);
                     map.put("bNickName", nickname);
                 }
@@ -183,6 +212,7 @@ public class WeixinController {
      */
     public String processRequest(HttpServletRequest request) {
         Map<String, String> map = WechatMessageUtils.xmlToMap(request);
+        log.info(map.toString());
         // 发送方帐号（一个OpenID）
         String fromUserName = map.get("FromUserName");
         // 开发者微信号
@@ -194,12 +224,11 @@ public class WeixinController {
         String responseMessage = "success";
 
         // 获取微信昵称
-        String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", WeixinAccessTokenTask.WXAccessToken).replace("OPENID", fromUserName);
+        String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", fromUserName);
         String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
+        log.info(userInfoResult);
         JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
         String nickname = jsonObject1.get("nickname").getAsString();
-        System.out.println(nickname);
-
 
         String[] strs = eventKey.split("-");
         String deviceidInput = strs[0];
@@ -224,9 +253,8 @@ public class WeixinController {
         if(tenDevice==null){
             content = "服务器开小差啦，请稍后再试!";
         }
-        if(tenDevice.getLeftId()!=null&&tenDevice.getRightId()!=null){
+        if(tenDevice.getLeftId()!=null && tenDevice.getRightId()!=null){
             content = "服务器开小差啦，请稍后再试!";
-            System.out.println("服务器开小差啦，请稍后再试!");
         }
         switch (type) {
             case "A":
@@ -245,11 +273,11 @@ public class WeixinController {
                     int count = tenDeviceService.save(tenDevice);
                     if (count < 1)
                     {
-                        content = "服务器开小差啦，请稍后再试！";
+                        content = "服务器开小差啦。请稍后再试！";
                     }
                     // 扫码记录
                     TenScanlog tenScanlog = new TenScanlog();
-                    tenScanlog.setDeviceId(deviceidInput);
+                    tenScanlog.setDeviceId(tenDevice.getId());
                     tenScanlog.setLeftId(tenUserId);
                     tenScanlogService.save(tenScanlog);
                 }
@@ -270,11 +298,11 @@ public class WeixinController {
                     int count = tenDeviceService.save(tenDevice);
                     if (count < 1)
                     {
-                        content = "服务器开小差啦，请稍后再试！";
+                        content = "服务器开小差啦。请稍后再试！";
                     }
                     // 扫码记录
                     TenScanlog tenScanlog = new TenScanlog();
-                    tenScanlog.setDeviceId(deviceidInput);
+                    tenScanlog.setDeviceId(tenDevice.getId());
                     tenScanlog.setRightId(tenUserId);
                     tenScanlogService.save(tenScanlog);
                 }
@@ -292,6 +320,32 @@ public class WeixinController {
         responseMessage = WechatMessageUtils.textMessageToXml(textMessage);
         log.info(responseMessage);
         return responseMessage;
+    }
+
+    @Autowired
+    private WeixinCommenUtil weixinCommenUtil;
+
+    /**
+     * 获取token(调用微信一个无上限接口确保token不过期)
+     */
+    public String getNewAccessToken() {
+        String access_token = "";
+        if(redisService.exists("accessToken")){
+            access_token = redisService.get("accessToken").toString();
+        }else{
+            access_token = weixinCommenUtil.getToken(WeixinConstant.APPID, WeixinConstant.APPSECRET).getToken();
+            redisService.set("accessToken", access_token,3660l);
+        }
+        String url = "https://api.weixin.qq.com/cgi-bin/getcallbackip?access_token=" + access_token;  // 获取微信服务器IP地址接口
+        String result = RequestUtils.httpsRequest(url, "GET", null);
+        //log.info(result);
+        if(result.indexOf("errcode")!=-1){
+            AccessToken accessToken = weixinCommenUtil.getToken(WeixinConstant.APPID, WeixinConstant.APPSECRET);
+            redisService.set("accessToken", accessToken.getToken(),3660l);
+            log.info("获取到的微信accessToken为"+accessToken.getToken());
+            access_token =accessToken.getToken();
+        }
+        return access_token;
     }
 
 }
