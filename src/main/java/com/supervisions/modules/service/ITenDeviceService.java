@@ -13,6 +13,6 @@ public interface ITenDeviceService
 
     public TenDevice selectDeviceByDeviceId(String deviceId);
 
-    public int save(TenDevice device);
+    public TenDevice save(TenDevice device);
 
 }

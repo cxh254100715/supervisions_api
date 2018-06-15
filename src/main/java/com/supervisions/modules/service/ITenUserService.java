@@ -14,5 +14,5 @@ public interface ITenUserService
 
     public TenUser selectUserById(Long id);
 
-    public int save(TenUser user);
+    public TenUser save(TenUser user);
 }

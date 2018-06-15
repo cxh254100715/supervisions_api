@@ -2,14 +2,10 @@ package com.supervisions.common.constant;
 
 /**
  * 通用常量信息
-
  */
 public class WeixinConstant
 {
 
-    /**
-     * @属性：SECRECT_KEY : TODO(加密密钥)
-     */
     /**微信支付回调地址*/
     public static final String CallbackURL = "";
     /**微信公众号APPID*/

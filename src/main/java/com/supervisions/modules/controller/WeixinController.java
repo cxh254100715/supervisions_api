@@ -105,7 +105,7 @@ public class WeixinController {
             String qrcodeUrl = WeixinConstant.QRCODE.replace("TOKEN", getNewAccessToken());
             String json = "{\"expire_seconds\": 86400, \"action_name\": \"QR_STR_SCENE\", \"action_info\": {\"scene\": {\"scene_str\": \""+deviceid+"\"}}}";
             String result = RequestUtils.httpsRequest(qrcodeUrl, "POST", json);
-            log.info(result);
+            log.info("deviceId："+ deviceid + "  " + result);
             JsonObject jsonObject = new JsonParser().parse(result).getAsJsonObject();
             String ticket = jsonObject.get("ticket").getAsString();
             String ticketUrl = "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=" + ticket;
@@ -121,12 +121,7 @@ public class WeixinController {
             }else{
                 tenDevice.setLeftId(null);
                 tenDevice.setRightId(null);
-                int count = tenDeviceService.save(tenDevice);
-                if(count<1){
-                    map.put("qr", "服务器开小差啦。请稍后再试！");
-                    map.put("code",2);
-                    return map;
-                }
+                tenDeviceService.save(tenDevice);
             }
             // 返回数据
             map.put("qr", ticketUrl);
@@ -156,17 +151,19 @@ public class WeixinController {
                     String headimgurl = "";
                     String nickname = "";
                     if(redisService.exists(openId)){
-                        headimgurl = redisService.hmGet(openId,"face").toString();
-                        nickname = redisService.hmGet(openId,"nickName").toString();
+                        String json = redisService.get(openId).toString();
+                        JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
+                        headimgurl = jsonObject.get("headimgurl").getAsString();
+                        nickname = jsonObject.get("nickname").getAsString();
                     }else{
                         String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", openId);
                         String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
                         log.info(userInfoResult);
-                        JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
-                        headimgurl = jsonObject1.get("headimgurl").getAsString();
-                        nickname = jsonObject1.get("nickname").getAsString();
-                        redisService.hmSet(openId,"face",headimgurl,7200l);
-                        redisService.hmSet(openId,"nickName",nickname,7200l);
+                        JsonObject jsonObject = new JsonParser().parse(userInfoResult).getAsJsonObject();
+                        headimgurl = jsonObject.get("headimgurl").getAsString();
+                        nickname = jsonObject.get("nickname").getAsString();
+                        String json = "{\"headimgurl\":\""+headimgurl+"\",\"nickname\":\""+nickname+"\"}";
+                        redisService.set(openId,json,7200l);
                     }
                     map.put("aFace", headimgurl);
                     map.put("aNickName", nickname);
@@ -176,17 +173,19 @@ public class WeixinController {
                     String headimgurl = "";
                     String nickname = "";
                     if(redisService.exists(openId)){
-                        headimgurl = redisService.hmGet(openId,"face").toString();
-                        nickname = redisService.hmGet(openId,"nickName").toString();
+                        String json = redisService.get(openId).toString();
+                        JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
+                        headimgurl = jsonObject.get("headimgurl").getAsString();
+                        nickname = jsonObject.get("nickname").getAsString();
                     }else{
                         String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", openId);
                         String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
                         log.info(userInfoResult);
-                        JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
-                        headimgurl = jsonObject1.get("headimgurl").getAsString();
-                        nickname = jsonObject1.get("nickname").getAsString();
-                        redisService.hmSet(openId,"face",headimgurl,7200l);
-                        redisService.hmSet(openId,"nickName",nickname,7200l);
+                        JsonObject jsonObject = new JsonParser().parse(userInfoResult).getAsJsonObject();
+                        headimgurl = jsonObject.get("headimgurl").getAsString();
+                        nickname = jsonObject.get("nickname").getAsString();
+                        String json = "{\"headimgurl\":\""+headimgurl+"\",\"nickname\":\""+nickname+"\"}";
+                        redisService.set(openId,json,7200l);
                     }
                     map.put("bFace", headimgurl);
                     map.put("bNickName", nickname);
@@ -228,6 +227,9 @@ public class WeixinController {
         String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
         log.info(userInfoResult);
         JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
+        if(jsonObject1.get("subscribe").toString().equals("0")){
+            return responseMessage;
+        }
         String nickname = jsonObject1.get("nickname").getAsString();
 
         String[] strs = eventKey.split("-");
@@ -270,11 +272,7 @@ public class WeixinController {
                 else
                 {
                     tenDevice.setLeftId(tenUserId);
-                    int count = tenDeviceService.save(tenDevice);
-                    if (count < 1)
-                    {
-                        content = "服务器开小差啦。请稍后再试！";
-                    }
+                    tenDeviceService.save(tenDevice);
                     // 扫码记录
                     TenScanlog tenScanlog = new TenScanlog();
                     tenScanlog.setDeviceId(tenDevice.getId());
@@ -295,11 +293,7 @@ public class WeixinController {
                 else
                 {
                     tenDevice.setRightId(tenUserId);
-                    int count = tenDeviceService.save(tenDevice);
-                    if (count < 1)
-                    {
-                        content = "服务器开小差啦。请稍后再试！";
-                    }
+                    tenDeviceService.save(tenDevice);
                     // 扫码记录
                     TenScanlog tenScanlog = new TenScanlog();
                     tenScanlog.setDeviceId(tenDevice.getId());

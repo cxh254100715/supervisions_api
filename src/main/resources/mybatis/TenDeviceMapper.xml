@@ -24,13 +24,13 @@
         update ten_device
         <set>
             update_time = #{updateTime},
-            version = version +1,
+            version = #{version},
             device_id = #{deviceId},
             left_id = #{leftId},
             right_id = #{rightId}
         </set>
         where 1=1
-        and id = #{id} and version = #{version}
+        and id = #{id} and version = #{version}-1
     </update>
 
     <insert id="insert" parameterType="TenDevice">
@@ -48,7 +48,7 @@
         )values(<trim suffixOverrides=",">
         #{id},
         #{createTime},
-        1,
+        #{version},
         #{deviceId},
         #{leftId},
         #{rightId}

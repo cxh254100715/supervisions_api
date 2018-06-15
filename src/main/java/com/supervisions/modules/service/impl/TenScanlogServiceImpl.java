@@ -6,6 +6,7 @@ import com.supervisions.modules.dao.ITenScanlogDao;
 import com.supervisions.modules.mapper.TenScanlog;
 import com.supervisions.modules.service.ITenScanlogService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
