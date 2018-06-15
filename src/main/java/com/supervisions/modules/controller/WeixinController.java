@@ -155,18 +155,22 @@ public class WeixinController {
                         JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
                         headimgurl = jsonObject.get("headimgurl").getAsString();
                         nickname = jsonObject.get("nickname").getAsString();
+                        map.put("aFace", headimgurl);
+                        map.put("aNickName", nickname);
                     }else{
                         String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", openId);
                         String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
                         log.info(userInfoResult);
                         JsonObject jsonObject = new JsonParser().parse(userInfoResult).getAsJsonObject();
-                        headimgurl = jsonObject.get("headimgurl").getAsString();
-                        nickname = jsonObject.get("nickname").getAsString();
-                        String json = "{\"headimgurl\":\""+headimgurl+"\",\"nickname\":\""+nickname+"\"}";
-                        redisService.set(openId,json,7200l);
+                        if(!jsonObject.get("subscribe").toString().equals("0")){
+                            headimgurl = jsonObject.get("headimgurl").getAsString();
+                            nickname = jsonObject.get("nickname").getAsString();
+                            String json = "{\"headimgurl\":\""+headimgurl+"\",\"nickname\":\""+nickname+"\"}";
+                            redisService.set(openId,json,7200l);
+                            map.put("aFace", headimgurl);
+                            map.put("aNickName", nickname);
+                        }
                     }
-                    map.put("aFace", headimgurl);
-                    map.put("aNickName", nickname);
                 }
                 if(tenDevice.getRightId()!=null){
                     String openId = tenUserService.selectUserById(tenDevice.getRightId()).getOpenId();
@@ -177,18 +181,22 @@ public class WeixinController {
                         JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
                         headimgurl = jsonObject.get("headimgurl").getAsString();
                         nickname = jsonObject.get("nickname").getAsString();
+                        map.put("bFace", headimgurl);
+                        map.put("bNickName", nickname);
                     }else{
                         String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", openId);
                         String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
                         log.info(userInfoResult);
                         JsonObject jsonObject = new JsonParser().parse(userInfoResult).getAsJsonObject();
-                        headimgurl = jsonObject.get("headimgurl").getAsString();
-                        nickname = jsonObject.get("nickname").getAsString();
-                        String json = "{\"headimgurl\":\""+headimgurl+"\",\"nickname\":\""+nickname+"\"}";
-                        redisService.set(openId,json,7200l);
+                        if(!jsonObject.get("subscribe").toString().equals("0")){
+                            headimgurl = jsonObject.get("headimgurl").getAsString();
+                            nickname = jsonObject.get("nickname").getAsString();
+                            String json = "{\"headimgurl\":\"" + headimgurl + "\",\"nickname\":\"" + nickname + "\"}";
+                            redisService.set(openId, json, 7200l);
+                            map.put("bFace", headimgurl);
+                            map.put("bNickName", nickname);
+                        }
                     }
-                    map.put("bFace", headimgurl);
-                    map.put("bNickName", nickname);
                 }
                 map.put("code",0);
                 return map;
