@@ -150,8 +150,8 @@ public class WeixinController {
                     String openId = tenUserService.selectUserById(tenDevice.getLeftId()).getOpenId();
                     String headimgurl = "";
                     String nickname = "";
-                    if(redisService.exists(openId)){
-                        String json = redisService.get(openId).toString();
+                    if(redisService.exists("openId:" + openId)){
+                        String json = redisService.get("openId:" + openId).toString();
                         JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
                         headimgurl = jsonObject.get("headimgurl").getAsString();
                         nickname = jsonObject.get("nickname").getAsString();
@@ -166,7 +166,7 @@ public class WeixinController {
                             headimgurl = jsonObject.get("headimgurl").getAsString();
                             nickname = jsonObject.get("nickname").getAsString();
                             String json = "{\"headimgurl\":\""+headimgurl+"\",\"nickname\":\""+nickname+"\"}";
-                            redisService.set(openId,json,7200l);
+                            redisService.set("openId:" + openId,json,7200l);
                             map.put("aFace", headimgurl);
                             map.put("aNickName", nickname);
                         }
@@ -176,8 +176,8 @@ public class WeixinController {
                     String openId = tenUserService.selectUserById(tenDevice.getRightId()).getOpenId();
                     String headimgurl = "";
                     String nickname = "";
-                    if(redisService.exists(openId)){
-                        String json = redisService.get(openId).toString();
+                    if(redisService.exists("openId:" + openId)){
+                        String json = redisService.get("openId:" + openId).toString();
                         JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
                         headimgurl = jsonObject.get("headimgurl").getAsString();
                         nickname = jsonObject.get("nickname").getAsString();
@@ -192,7 +192,7 @@ public class WeixinController {
                             headimgurl = jsonObject.get("headimgurl").getAsString();
                             nickname = jsonObject.get("nickname").getAsString();
                             String json = "{\"headimgurl\":\"" + headimgurl + "\",\"nickname\":\"" + nickname + "\"}";
-                            redisService.set(openId, json, 7200l);
+                            redisService.set("openId:" + openId, json, 7200l);
                             map.put("bFace", headimgurl);
                             map.put("bNickName", nickname);
                         }

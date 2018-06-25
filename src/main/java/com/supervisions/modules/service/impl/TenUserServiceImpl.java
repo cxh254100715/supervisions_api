@@ -35,14 +35,14 @@ public class TenUserServiceImpl implements ITenUserService
     }
 
     @Override
-    @Cacheable(key = "'userId_'+#id")
+    @Cacheable(key = "'userId:'+#id")
     public TenUser selectUserById(Long id)
     {
         return tenUserDao.selectUserById(id);
     }
 
     @Override
-    @CachePut(key = "'userId_'+#user.getId()")
+    @CachePut(key = "'userId:'+#user.getId()")
     public TenUser save(TenUser user)
     {
         user.setCreateTime(new Date());

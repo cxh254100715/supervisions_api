@@ -27,14 +27,14 @@ public class TenDeviceServiceImpl implements ITenDeviceService
     private ITenDeviceDao tenDeviceDao;
 
     @Override
-    @Cacheable(key = "'deviceId_'+#deviceId")
+    @Cacheable(key = "'deviceId:'+#deviceId")
     public TenDevice selectDeviceByDeviceId(String deviceId)
     {
         return tenDeviceDao.selectDeviceByDeviceId(deviceId);
     }
 
     @Override
-    @CachePut(key = "'deviceId_'+#device.getDeviceId()")
+    @CachePut(key = "'deviceId:'+#device.getDeviceId()")
     public TenDevice save(TenDevice device)
     {
         Long id = device.getId();
