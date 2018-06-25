@@ -264,54 +264,64 @@ public class WeixinController {
             content = "服务器开小差啦，请稍后再试!";
         }
         if(tenDevice.getLeftId()!=null && tenDevice.getRightId()!=null){
-            content = "服务器开小差啦，请稍后再试!";
+            content = "此设备已登录!";
+        }else{
+            switch (type) {
+                case "A":
+                    String BOpenId = "";
+                    if(tenDevice.getLeftId() != null){
+                        content = "此设备已登录!";
+                        break;
+                    }
+                    if (tenDevice.getRightId() != null)
+                    {
+                        BOpenId = tenUserService.selectUserById(tenDevice.getRightId()).getOpenId();
+                    }
+                    if (openId.equals(BOpenId))
+                    {
+                        content = "您已扫码,请不要重复扫码!";
+                    }
+                    else
+                    {
+                        tenDevice.setLeftId(tenUserId);
+                        tenDeviceService.save(tenDevice);
+                        // 扫码记录
+                        TenScanlog tenScanlog = new TenScanlog();
+                        tenScanlog.setDeviceId(tenDevice.getId());
+                        tenScanlog.setLeftId(tenUserId);
+                        tenScanlogService.save(tenScanlog);
+                    }
+                    break;
+                case "B":
+                    String AOpenId = "";
+                    if(tenDevice.getRightId() != null){
+                        content = "此设备已登录!";
+                        break;
+                    }
+                    if (tenDevice.getLeftId() != null)
+                    {
+                        AOpenId = tenUserService.selectUserById(tenDevice.getLeftId()).getOpenId();
+                    }
+                    if (openId.equals(AOpenId))
+                    {
+                        content = "您已扫码,请不要重复扫码!";
+                    }
+                    else
+                    {
+                        tenDevice.setRightId(tenUserId);
+                        tenDeviceService.save(tenDevice);
+                        // 扫码记录
+                        TenScanlog tenScanlog = new TenScanlog();
+                        tenScanlog.setDeviceId(tenDevice.getId());
+                        tenScanlog.setRightId(tenUserId);
+                        tenScanlogService.save(tenScanlog);
+                    }
+                    break;
+                default:
+                    content = "参数错误!";
+            }
         }
-        switch (type) {
-            case "A":
-                String BOpenId = "";
-                if (tenDevice.getRightId() != null)
-                {
-                    BOpenId = tenUserService.selectUserById(tenDevice.getRightId()).getOpenId();
-                }
-                if (openId.equals(BOpenId))
-                {
-                    content = "您已扫码,请不要重复扫码!";
-                }
-                else
-                {
-                    tenDevice.setLeftId(tenUserId);
-                    tenDeviceService.save(tenDevice);
-                    // 扫码记录
-                    TenScanlog tenScanlog = new TenScanlog();
-                    tenScanlog.setDeviceId(tenDevice.getId());
-                    tenScanlog.setLeftId(tenUserId);
-                    tenScanlogService.save(tenScanlog);
-                }
-                break;
-            case "B":
-                String AOpenId = "";
-                if (tenDevice.getLeftId() != null)
-                {
-                    AOpenId = tenUserService.selectUserById(tenDevice.getLeftId()).getOpenId();
-                }
-                if (openId.equals(AOpenId))
-                {
-                    content = "您已扫码,请不要重复扫码!";
-                }
-                else
-                {
-                    tenDevice.setRightId(tenUserId);
-                    tenDeviceService.save(tenDevice);
-                    // 扫码记录
-                    TenScanlog tenScanlog = new TenScanlog();
-                    tenScanlog.setDeviceId(tenDevice.getId());
-                    tenScanlog.setRightId(tenUserId);
-                    tenScanlogService.save(tenScanlog);
-                }
-                break;
-            default:
-                content = "参数错误!";
-        }
+
         // 返回公众号消息
         TextMessage textMessage = new TextMessage();
         textMessage.setMsgType(WechatMessageUtils.MESSAGE_TEXT);
