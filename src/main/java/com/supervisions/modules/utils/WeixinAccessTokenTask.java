@@ -27,11 +27,11 @@ public class WeixinAccessTokenTask {
     //public static String WXAccessToken = null;
 
     // 第一次延迟1秒执行，当执行完后7100秒再执行7000*1000
-    @Scheduled(fixedDelay = 3600*1000)
+    @Scheduled(fixedDelay = 7200*1000)
     public void getWeixinAccessToken(){
         try {
             AccessToken accessToken = weixinCommenUtil.getToken(WeixinConstant.APPID, WeixinConstant.APPSECRET);
-            redisService.set("accessToken", accessToken.getToken(),3660l);
+            redisService.set("accessToken", accessToken.getToken(),7260l);
             logger.info("获取到的微信accessToken为"+accessToken.getToken());
         } catch (Exception e) {
             logger.error("获取微信accessToken出错，信息如下");

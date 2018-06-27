@@ -17,5 +17,7 @@ public interface ITenUserDao
 
     public int insert(TenUser user);
 
+    public int update(TenUser user);
+
     public TenUser selectUserById(Long id);
 }

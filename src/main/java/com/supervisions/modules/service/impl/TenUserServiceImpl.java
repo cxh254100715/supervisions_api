@@ -45,8 +45,16 @@ public class TenUserServiceImpl implements ITenUserService
     @CachePut(key = "'userId:'+#user.getId()")
     public TenUser save(TenUser user)
     {
-        user.setCreateTime(new Date());
-        tenUserDao.insert(user);
+        if(StringUtils.isNotNull(user.getId())){
+            user.setUpdateTime(new Date());
+            user.setVersion(user.getVersion()+1);
+            tenUserDao.update(user);
+        }else{
+            user.setCreateTime(new Date());
+            user.setStatus("0");
+            user.setVersion(1);
+            tenUserDao.insert(user);
+        }
         return user;
     }
 }

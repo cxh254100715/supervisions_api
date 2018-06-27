@@ -7,9 +7,17 @@
     <resultMap type="TenUser" id="TenUserResult">
         <id     property="id"	column="id"	/>
         <result property="createTime"	column="create_time"	/>
+        <result property="createUser"	column="create_user"	/>
+        <result property="updateTime"	column="update_time"	/>
+        <result property="updateUser"	column="update_user"	/>
+        <result property="status"	column="status"	/>
         <result property="version"	column="version"	/>
 		<result property="openId"	column="open_id"	/>
-        </resultMap>
+        <result property="sex"	column="sex"	/>
+        <result property="address"	column="address"	/>
+        <result property="nickname"	column="nickname"	/>
+        <result property="headimgurl"	column="headimgurl"	/>
+    </resultMap>
 
     <select id="selectUserByOpenId" parameterType="String" resultMap="TenUserResult">
 		select *
@@ -23,6 +31,23 @@
 		where id = #{id}
 	</select>
 
+    <update id="update" parameterType="TenUser">
+        update ten_user
+        <set>
+            <if test="updateUser != null and updateUser != ''">update_user = #{updateUser},</if>
+            <if test="status !=null and status != ''">status = #{status},</if>
+            <if test="sex != null">sex = #{sex},</if>
+            <if test="address != null and address != ''">sex = #{address},</if>
+            <if test="nickname != null and nickname != ''">nickname = #{nickname},</if>
+            <if test="headimgurl != null and headimgurl != ''">headimgurl = #{headimgurl},</if>
+            version = #{version},
+            update_time = #{updateTime}
+        </set>
+        where 1=1
+        <if test="id != null and id != ''">and id = #{id}</if>
+        and version = #{version}-1
+    </update>
+
     <insert id="insert" parameterType="TenUser">
         <selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
             select nextval('ten_user_id');
@@ -30,13 +55,25 @@
         insert into ten_user(<trim suffixOverrides=",">
         id,
         create_time,
-        open_id
-    </trim>
+        status,
+        version,
+        open_id,
+        sex,
+        address,
+        nickname,
+        headimgurl
+        </trim>
         )values(<trim suffixOverrides=",">
         #{id},
         #{createTime},
-        #{openId}
-    </trim>
+        #{status},
+        #{version},
+        #{openId},
+        #{sex},
+        #{address},
+        #{nickname},
+        #{headimgurl}
+        </trim>
         )
     </insert>
 

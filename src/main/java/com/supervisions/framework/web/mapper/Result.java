@@ -6,12 +6,12 @@ public class Result implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	
-	private static final String SUCCESS = "1";
+	private static final String SUCCESS = "0";
 	
-	private static final String ERROR = "0";
+	private static final String ERROR = "1";
 
 	/**
-	 * 状态码 (0失败  1成功)
+	 * 状态码 (0成功  1失败)
 	 */
 	private String code;
 	
@@ -67,7 +67,14 @@ public class Result implements Serializable{
 	public static Result successResult(Object data,String msg) {
 		return new Result(SUCCESS, data, msg);
 	}
-	
+
+	/**
+	 * 默认操作成功结果.
+	 */
+	public static Result successResult() {
+		return new Result(SUCCESS, null, "success");
+	}
+
 	/**
 	 * 默认操作成功结果.
 	 */

@@ -29,8 +29,8 @@ public class Swagger2
     }
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("RESTful API")
-                .description("基于Spring Boot、Swagger2构建RESTful风格的API，并自动生成文档")
+                .title("API")
+                .description("文档")
                 //.termsOfServiceUrl("https://baidu.com")
                 //.contact(new Contact("cxh", "https://baidu.com", "123@qq.com"))
                 .version("1.0")

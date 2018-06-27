@@ -8,6 +8,7 @@ import com.supervisions.common.utils.RequestUtils;
 import com.supervisions.common.utils.StringUtils;
 import com.supervisions.common.utils.WechatMessageUtils;
 import com.supervisions.framework.web.mapper.AccessToken;
+import com.supervisions.framework.web.mapper.Result;
 import com.supervisions.framework.web.mapper.TextMessage;
 import com.supervisions.framework.web.service.RedisService;
 import com.supervisions.modules.mapper.TenDevice;
@@ -53,7 +54,7 @@ public class WeixinController {
     /**
      * 公众号token验证
      */
-    @ApiIgnore//使用该注解忽略这个API
+    @ApiIgnore
     @RequestMapping(value = "/checkoutToken", method = { RequestMethod.GET,RequestMethod.POST })
     public void checkoutToken(HttpServletRequest request, HttpServletResponse response) throws Exception {
         response.setContentType("text/html;charset=utf-8");
@@ -92,21 +93,19 @@ public class WeixinController {
     @ApiOperation(value="获取带参数二维码", notes="根据设备id获取二维码")
     @ApiImplicitParam(name = "deviceid", value = "设备id", required = true, dataType = "String", paramType = "query")
     @GetMapping(value = "/loginqr")
-    public Map<String,Object> loginqr(@RequestParam(required = true) String deviceid) {
-        Map<String,Object> map = new HashMap<>();
+    public Result loginqr(@RequestParam(required = true) String deviceid) {
+        Result result = null;
         try {
             if(!StringUtils.isEmpty(deviceid)&&deviceid.indexOf("-")==-1){
-                map.put("qr", "参数错误！");
-                map.put("code",2);
-                return map;
+                return result.errorResult("参数错误！");
             }
 
             // 获取临时二维码url
             String qrcodeUrl = WeixinConstant.QRCODE.replace("TOKEN", getNewAccessToken());
             String json = "{\"expire_seconds\": 86400, \"action_name\": \"QR_STR_SCENE\", \"action_info\": {\"scene\": {\"scene_str\": \""+deviceid+"\"}}}";
-            String result = RequestUtils.httpsRequest(qrcodeUrl, "POST", json);
-            log.info("deviceId："+ deviceid + "  " + result);
-            JsonObject jsonObject = new JsonParser().parse(result).getAsJsonObject();
+            String res = RequestUtils.httpsRequest(qrcodeUrl, "POST", json);
+            log.info("deviceId："+ deviceid + "  " + res);
+            JsonObject jsonObject = new JsonParser().parse(res).getAsJsonObject();
             String ticket = jsonObject.get("ticket").getAsString();
             String ticketUrl = "https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=" + ticket;
 
@@ -124,14 +123,10 @@ public class WeixinController {
                 tenDeviceService.save(tenDevice);
             }
             // 返回数据
-            map.put("qr", ticketUrl);
-            map.put("code",0);
-            return map;
+            return result.successResult("{\"qr\":\""+ticketUrl+"\"}");
         } catch (Exception e) {
             log.error(e.getMessage(),e);
-            map.put("qr", "服务器开小差啦，请稍后再试！");
-            map.put("code",2);
-            return map;
+            return result.errorResult();
         }
     }
 
@@ -141,76 +136,29 @@ public class WeixinController {
     @ApiOperation(value="获取微信用户信息", notes="根据设备id获取登录的微信用户信息")
     @ApiImplicitParam(name = "deviceid", value = "设备id", required = true, dataType = "String", paramType = "query")
     @GetMapping(value = "/userinfo")
-    public Map<String,Object> userinfo(@RequestParam(required = true) String deviceid) {
+    public Result userinfo(@RequestParam(required = true) String deviceid) {
+        Result result = null;
+        Map<String,Object> map = new HashMap<>();
         try {
-            Map<String,Object> map = new HashMap<>();
             TenDevice tenDevice = tenDeviceService.selectDeviceByDeviceId(deviceid);
             if(tenDevice!=null){
                 if(tenDevice.getLeftId()!=null){
-                    String openId = tenUserService.selectUserById(tenDevice.getLeftId()).getOpenId();
-                    String headimgurl = "";
-                    String nickname = "";
-                    if(redisService.exists("openId:" + openId)){
-                        String json = redisService.get("openId:" + openId).toString();
-                        JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
-                        headimgurl = jsonObject.get("headimgurl").getAsString();
-                        nickname = jsonObject.get("nickname").getAsString();
-                        map.put("aFace", headimgurl);
-                        map.put("aNickName", nickname);
-                    }else{
-                        String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", openId);
-                        String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
-                        log.info(userInfoResult);
-                        JsonObject jsonObject = new JsonParser().parse(userInfoResult).getAsJsonObject();
-                        if(!jsonObject.get("subscribe").toString().equals("0")){
-                            headimgurl = jsonObject.get("headimgurl").getAsString();
-                            nickname = jsonObject.get("nickname").getAsString();
-                            String json = "{\"headimgurl\":\""+headimgurl+"\",\"nickname\":\""+nickname+"\"}";
-                            redisService.set("openId:" + openId,json,7200l);
-                            map.put("aFace", headimgurl);
-                            map.put("aNickName", nickname);
-                        }
-                    }
+                    TenUser user = tenUserService.selectUserById(tenDevice.getLeftId());
+                    map.put("aFace", user.getHeadimgurl());
+                    map.put("aNickName", user.getNickname());
                 }
                 if(tenDevice.getRightId()!=null){
-                    String openId = tenUserService.selectUserById(tenDevice.getRightId()).getOpenId();
-                    String headimgurl = "";
-                    String nickname = "";
-                    if(redisService.exists("openId:" + openId)){
-                        String json = redisService.get("openId:" + openId).toString();
-                        JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
-                        headimgurl = jsonObject.get("headimgurl").getAsString();
-                        nickname = jsonObject.get("nickname").getAsString();
-                        map.put("bFace", headimgurl);
-                        map.put("bNickName", nickname);
-                    }else{
-                        String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", openId);
-                        String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
-                        log.info(userInfoResult);
-                        JsonObject jsonObject = new JsonParser().parse(userInfoResult).getAsJsonObject();
-                        if(!jsonObject.get("subscribe").toString().equals("0")){
-                            headimgurl = jsonObject.get("headimgurl").getAsString();
-                            nickname = jsonObject.get("nickname").getAsString();
-                            String json = "{\"headimgurl\":\"" + headimgurl + "\",\"nickname\":\"" + nickname + "\"}";
-                            redisService.set("openId:" + openId, json, 7200l);
-                            map.put("bFace", headimgurl);
-                            map.put("bNickName", nickname);
-                        }
-                    }
+                    TenUser user = tenUserService.selectUserById(tenDevice.getRightId());
+                    map.put("bFace", user.getHeadimgurl());
+                    map.put("bNickName", user.getNickname());
                 }
-                map.put("code",0);
-                return map;
+                return result.successResult(map);
             }else{
-                map.put("msg", "服务器开小差啦，请稍后再试！");
-                map.put("code",2);
-                return map;
+                return result.errorResult();
             }
         } catch (Exception e) {
             log.error(e.getMessage(),e);
-            Map<String,Object> map = new HashMap<>();
-            map.put("msg", "服务器开小差啦，请稍后再试！");
-            map.put("code",2);
-            return map;
+            return result.errorResult();
         }
     }
 
@@ -226,108 +174,109 @@ public class WeixinController {
         String toUserName = map.get("ToUserName");
         // 消息类型
         String msgType = map.get("MsgType");
+        // 设备唯一编号
         String eventKey = map.get("EventKey").replace("qrscene_", "");
         // 默认回复一个"success"
         String responseMessage = "success";
 
-        // 获取微信昵称
-        String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", fromUserName);
-        String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
-        log.info(userInfoResult);
-        JsonObject jsonObject1 = new JsonParser().parse(userInfoResult).getAsJsonObject();
-        if(jsonObject1.get("subscribe").toString().equals("0")){
-            return responseMessage;
-        }
-        String nickname = jsonObject1.get("nickname").getAsString();
-
-        String[] strs = eventKey.split("-");
-        String deviceidInput = strs[0];
-        String type = strs[1]; // 值 A或B
-        String openId = fromUserName; // 扫码者openid
-        String content = ""+nickname+",您已成功登陆设备:"+eventKey+"";
-
-        // 保存微信用户
-        Long tenUserId = 0l;
-        TenUser tenUser = tenUserService.selectUserByOpenId(openId);
-        if(tenUser == null){
-            TenUser tenUser1 = new TenUser();
-            tenUser1.setOpenId(openId);
-            tenUserService.save(tenUser1);
-            tenUserId = tenUser1.getId();
-        }else{
-            tenUserId = tenUser.getId();
-        }
-
-        // 判断AB是否重复
-        TenDevice tenDevice = tenDeviceService.selectDeviceByDeviceId(deviceidInput);
-        if(tenDevice==null){
-            content = "服务器开小差啦，请稍后再试!";
-        }
-        if(tenDevice.getLeftId()!=null && tenDevice.getRightId()!=null){
-            content = "此设备已登录!";
-        }else{
-            switch (type) {
-                case "A":
-                    String BOpenId = "";
-                    if(tenDevice.getLeftId() != null){
-                        content = "此设备已登录!";
-                        break;
-                    }
-                    if (tenDevice.getRightId() != null)
-                    {
-                        BOpenId = tenUserService.selectUserById(tenDevice.getRightId()).getOpenId();
-                    }
-                    if (openId.equals(BOpenId))
-                    {
-                        content = "您已扫码,请不要重复扫码!";
-                    }
-                    else
-                    {
-                        tenDevice.setLeftId(tenUserId);
-                        tenDeviceService.save(tenDevice);
-                        // 扫码记录
-                        TenScanlog tenScanlog = new TenScanlog();
-                        tenScanlog.setDeviceId(tenDevice.getId());
-                        tenScanlog.setLeftId(tenUserId);
-                        tenScanlogService.save(tenScanlog);
-                    }
-                    break;
-                case "B":
-                    String AOpenId = "";
-                    if(tenDevice.getRightId() != null){
-                        content = "此设备已登录!";
-                        break;
-                    }
-                    if (tenDevice.getLeftId() != null)
-                    {
-                        AOpenId = tenUserService.selectUserById(tenDevice.getLeftId()).getOpenId();
-                    }
-                    if (openId.equals(AOpenId))
-                    {
-                        content = "您已扫码,请不要重复扫码!";
-                    }
-                    else
-                    {
-                        tenDevice.setRightId(tenUserId);
-                        tenDeviceService.save(tenDevice);
-                        // 扫码记录
-                        TenScanlog tenScanlog = new TenScanlog();
-                        tenScanlog.setDeviceId(tenDevice.getId());
-                        tenScanlog.setRightId(tenUserId);
-                        tenScanlogService.save(tenScanlog);
-                    }
-                    break;
-                default:
-                    content = "参数错误!";
-            }
-        }
-
+        String content = "";
         // 返回公众号消息
         TextMessage textMessage = new TextMessage();
         textMessage.setMsgType(WechatMessageUtils.MESSAGE_TEXT);
         textMessage.setToUserName(fromUserName);
         textMessage.setFromUserName(toUserName);
         textMessage.setCreateTime(System.currentTimeMillis()/1000);
+
+        if(!StringUtils.isEmpty(eventKey)&&eventKey.indexOf("-")==-1){
+            textMessage.setContent(content);
+            responseMessage = WechatMessageUtils.textMessageToXml(textMessage);
+            log.info(responseMessage);
+            return responseMessage;
+        }
+
+        Long tenUserId = 0l;
+        TenUser tenUser = tenUserService.selectUserByOpenId(fromUserName);
+        if(tenUser == null){
+            // 获取微信用户
+            String userInfoUrl = WeixinConstant.USERINFO.replace("TOKEN", getNewAccessToken()).replace("OPENID", fromUserName);
+            String userInfoResult = RequestUtils.httpsRequest(userInfoUrl, "GET", null);
+            log.info(userInfoResult);
+            JsonObject jsonObject = new JsonParser().parse(userInfoResult).getAsJsonObject();
+            if(jsonObject.get("subscribe").toString().equals("0")){
+                return responseMessage;
+            }
+            TenUser tenUser1 = new TenUser();
+            tenUser1.setOpenId(fromUserName);
+            tenUser1.setNickname(jsonObject.get("nickname").getAsString());
+            tenUser1.setHeadimgurl(jsonObject.get("headimgurl").getAsString());
+            tenUser1.setSex(Integer.valueOf(jsonObject.get("sex").getAsString()));
+            String city = jsonObject.get("city").getAsString();
+            String province = jsonObject.get("province").getAsString();
+            String country = jsonObject.get("country").getAsString();
+            if(StringUtils.isNotEmpty(city)&&StringUtils.isNotEmpty(province)&&StringUtils.isNotEmpty(country)){
+                String address = "{\"country\": \""+jsonObject.get("country").getAsString()+"\", \"province\": \""+jsonObject.get("province").getAsString()+"\", \"city\": \""+jsonObject.get("city").getAsString()+"\"}";
+                tenUser1.setAddress(address);
+            }
+            tenUserService.save(tenUser1);
+            tenUserId = tenUser1.getId();
+            content = ""+tenUser1.getNickname()+",您已成功登陆设备:"+eventKey+"";
+        }else{
+            tenUserId = tenUser.getId();
+            content = ""+tenUser.getNickname()+",您已成功登陆设备:"+eventKey+"";
+        }
+
+        String[] strs = eventKey.split("-");
+        String deviceidInput = strs[0];
+        String type = strs[1]; // 值 A或B
+
+        // 判断AB是否重复
+        TenDevice tenDevice = tenDeviceService.selectDeviceByDeviceId(deviceidInput);
+        if(tenDevice==null){
+            content = "设备不存在!";
+            textMessage.setContent(content);
+            responseMessage = WechatMessageUtils.textMessageToXml(textMessage);
+            log.info(responseMessage);
+            return responseMessage;
+        }
+        switch (type) {
+            case "A":
+                if(tenDevice.getLeftId() != null){
+                    content = "此设备已登录!";
+                    break;
+                }
+                if (!tenDevice.getRightId().equals(tenUserId)){
+                    tenDevice.setLeftId(tenUserId);
+                    tenDeviceService.save(tenDevice);
+                    // 扫码记录
+                    TenScanlog tenScanlog = new TenScanlog();
+                    tenScanlog.setDeviceId(tenDevice.getId());
+                    tenScanlog.setLeftId(tenUserId);
+                    tenScanlogService.save(tenScanlog);
+                }else{
+                    content = "您已扫码,请不要重复扫码!";
+                }
+                break;
+            case "B":
+                if(tenDevice.getRightId() != null){
+                    content = "此设备已登录!";
+                    break;
+                }
+                if (!tenDevice.getLeftId().equals(tenUserId)){
+                    tenDevice.setRightId(tenUserId);
+                    tenDeviceService.save(tenDevice);
+                    // 扫码记录
+                    TenScanlog tenScanlog = new TenScanlog();
+                    tenScanlog.setDeviceId(tenDevice.getId());
+                    tenScanlog.setRightId(tenUserId);
+                    tenScanlogService.save(tenScanlog);
+                }else{
+                    content = "您已扫码,请不要重复扫码!";
+                }
+                break;
+            default:
+                content = "参数错误!";
+        }
+
         textMessage.setContent(content);
         responseMessage = WechatMessageUtils.textMessageToXml(textMessage);
         log.info(responseMessage);
@@ -346,14 +295,13 @@ public class WeixinController {
             access_token = redisService.get("accessToken").toString();
         }else{
             access_token = weixinCommenUtil.getToken(WeixinConstant.APPID, WeixinConstant.APPSECRET).getToken();
-            redisService.set("accessToken", access_token,3660l);
+            redisService.set("accessToken", access_token,7260l);
         }
         String url = "https://api.weixin.qq.com/cgi-bin/getcallbackip?access_token=" + access_token;  // 获取微信服务器IP地址接口
         String result = RequestUtils.httpsRequest(url, "GET", null);
-        //log.info(result);
         if(result.indexOf("errcode")!=-1){
             AccessToken accessToken = weixinCommenUtil.getToken(WeixinConstant.APPID, WeixinConstant.APPSECRET);
-            redisService.set("accessToken", accessToken.getToken(),3660l);
+            redisService.set("accessToken", accessToken.getToken(),7260l);
             log.info("获取到的微信accessToken为"+accessToken.getToken());
             access_token =accessToken.getToken();
         }
