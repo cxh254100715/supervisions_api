@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
- * 接口
+ * app接口
  */
 @RestController
 @RequestMapping("/app")
@@ -37,7 +37,7 @@ public class AppController
 
     @ApiOperation(value="获取最新版本", notes="获取最新版本")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "type", value = "类型（0:Android 1:box）", required = true, dataType = "int", paramType = "query"),
+            @ApiImplicitParam(name = "type", value = "类型（0:android 1:box）", required = true, dataType = "int", paramType = "query"),
             @ApiImplicitParam(name = "versionCode", value = "版本号", required = true, dataType = "string", paramType = "query")
     })
     @GetMapping("/checkVersionUpdate")
@@ -57,7 +57,7 @@ public class AppController
                 return  Result.errorResult("暂无版本更新");
             }
         }catch (Exception e){
-            return  Result.errorResult("服务器开小差啦，请稍后再试！");
+            return  Result.errorResult();
         }
     }
 
@@ -71,7 +71,7 @@ public class AppController
             return result.successResult(list);
         }catch (Exception e)
         {
-            return  result.errorResult("服务器开小差啦，请稍后再试！");
+            return  result.errorResult();
         }
     }
 
@@ -89,10 +89,14 @@ public class AppController
         Map<String,Object> map = new HashMap<String,Object>();
         try
         {
-            TenUser user = tenUserService.selectUserById(id);
+            /*TenUser user = tenUserService.selectUserById(id);
             if(user==null){
                 return  result.errorResult("用户不存在！");
             }
+            if(StringUtils.isEmpty(nickname)&&StringUtils.isEmpty(headimgurl)){
+                return  result.errorResult("缺少参数！");
+            }
+            map.put("id",user.getId());
             if(StringUtils.isNotEmpty(nickname)){
                 user.setNickname(nickname);
                 map.put("nickname",user.getNickname());
@@ -102,10 +106,11 @@ public class AppController
                 map.put("headimgurl",user.getHeadimgurl());
             }
             tenUserService.save(user);
-            return Result.successResult(map);
+            return Result.successResult(map);*/
+            return Result.successResult();
         }catch (Exception e)
         {
-            return  result.errorResult("服务器开小差啦，请稍后再试！");
+            return  result.errorResult();
         }
     }
 

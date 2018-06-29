@@ -37,7 +37,7 @@
             <if test="updateUser != null and updateUser != ''">update_user = #{updateUser},</if>
             <if test="status !=null and status != ''">status = #{status},</if>
             <if test="sex != null">sex = #{sex},</if>
-            <if test="address != null and address != ''">sex = #{address},</if>
+            <if test="address != null and address != ''">address = #{address},</if>
             <if test="nickname != null and nickname != ''">nickname = #{nickname},</if>
             <if test="headimgurl != null and headimgurl != ''">headimgurl = #{headimgurl},</if>
             version = #{version},

@@ -18,7 +18,7 @@
     </resultMap>
 
     <select id="selectTenPictureByType" parameterType="Integer" resultType="java.util.HashMap">
-        select order_no orderNo, url from ten_picture where type = #{type}
+        select order_no orderNo, url from ten_picture where type = #{type} order by order_no
 	</select>
 
 </mapper>
