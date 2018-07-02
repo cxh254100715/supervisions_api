@@ -119,6 +119,13 @@
             <classifier>jdk15</classifier>
         </dependency>
 
+        <!--io常用工具类 -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
+        </dependency>
+
         <!--使用tomcat启动-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
