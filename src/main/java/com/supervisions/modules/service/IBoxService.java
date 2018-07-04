@@ -7,7 +7,7 @@ import java.util.List;
 public interface IBoxService
 {
 
-    public List<Deviceinfo> activateDevice(String deviceCode);
+    public List<Deviceinfo> activateDevice(String deviceSn);
 
     public int save(Deviceinfo deviceinfo);
 }

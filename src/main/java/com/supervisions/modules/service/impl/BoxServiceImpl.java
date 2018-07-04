@@ -15,9 +15,9 @@ public class BoxServiceImpl implements IBoxService
     private IDeviceinfoDao deviceinfoDao;
 
     @Override
-    public List<Deviceinfo> activateDevice(String deviceCode)
+    public List<Deviceinfo> activateDevice(String deviceSn)
     {
-        return deviceinfoDao.selectDeviceinfoBySerialNumber(deviceCode);
+        return deviceinfoDao.selectDeviceinfoBydeviceSn(deviceSn);
     }
 
     @Override

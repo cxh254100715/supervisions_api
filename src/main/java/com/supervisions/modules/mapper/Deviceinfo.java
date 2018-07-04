@@ -10,7 +10,7 @@ public class Deviceinfo extends DataEntity
 {
 
 	/** 序列号 */
-    private String serialNumber;
+    private String deviceSn;
 	/** 类型 0:box 1:tv 2:camera */
     private Integer type;
 	/** 设备id */
@@ -31,14 +31,42 @@ public class Deviceinfo extends DataEntity
     private String merchantName;
     /** 商户地址名 */
     private String merchantAddressName;
+    /** 设备唯一标识 */
+    private String deviceUnique;
+    /** 公钥 */
+    private String devicePublickey;
 
-    public String getSerialNumber(){
-       return serialNumber ;
+
+    public String getDeviceSn()
+    {
+        return deviceSn;
     }
-	
-    public void setSerialNumber(String serialNumber){
-       this.serialNumber = serialNumber;
+
+    public void setDeviceSn(String deviceSn)
+    {
+        this.deviceSn = deviceSn;
     }
+
+    public String getDeviceUnique()
+    {
+        return deviceUnique;
+    }
+
+    public void setDeviceUnique(String deviceUnique)
+    {
+        this.deviceUnique = deviceUnique;
+    }
+
+    public String getDevicePublickey()
+    {
+        return devicePublickey;
+    }
+
+    public void setDevicePublickey(String devicePublickey)
+    {
+        this.devicePublickey = devicePublickey;
+    }
+
     public Integer getType(){
        return type ;
     }

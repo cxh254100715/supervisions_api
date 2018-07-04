@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface IDeviceinfoDao
 {
-    public List<Deviceinfo> selectDeviceinfoBySerialNumber(String deviceCode);
+    public List<Deviceinfo> selectDeviceinfoBydeviceSn(String deviceSn);
 
     public int updateDeviceinfo(Deviceinfo deviceinfo); // 暂只更新isActivated字段
 }
