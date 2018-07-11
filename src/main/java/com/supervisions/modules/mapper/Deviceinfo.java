@@ -2,6 +2,8 @@ package com.supervisions.modules.mapper;
 
 import com.supervisions.framework.web.mapper.DataEntity;
 
+import java.util.Date;
+
 /**
  * deviceinfo
  * @author cxh
@@ -35,6 +37,8 @@ public class Deviceinfo extends DataEntity
     private String deviceUnique;
     /** 公钥 */
     private String devicePublickey;
+    /** 最后上线时间 */
+    private Date lastOnlineTime;
 
 
     public String getDeviceSn()
@@ -145,5 +149,15 @@ public class Deviceinfo extends DataEntity
     public void setMerchantAddressName(String merchantAddressName)
     {
         this.merchantAddressName = merchantAddressName;
+    }
+
+    public Date getLastOnlineTime()
+    {
+        return lastOnlineTime;
+    }
+
+    public void setLastOnlineTime(Date lastOnlineTime)
+    {
+        this.lastOnlineTime = lastOnlineTime;
     }
 }

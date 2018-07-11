@@ -1,5 +1,8 @@
 server:
   port: 8081
+  #context-path: /supervisions_api
+  tomcat:
+    uri-encoding: utf-8
 
 spring:
     datasource:
@@ -43,6 +46,9 @@ spring:
           min-idle: 0
           # 连接超时时间（毫秒）
           timeout: 0
+
+    jackson:
+          date-format: yyyy-MM-dd HH:mm:ss
 
 mybatis:
   mapper-locations: classpath:mybatis/*Mapper.xml

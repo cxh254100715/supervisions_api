@@ -8,7 +8,11 @@ import com.supervisions.common.utils.RSAUtils;
 import com.supervisions.framework.web.mapper.Result;
 import com.supervisions.framework.web.service.RedisService;
 import com.supervisions.modules.mapper.Deviceinfo;
+import com.supervisions.modules.mapper.Logininfor;
 import com.supervisions.modules.service.IBoxService;
+import com.supervisions.modules.service.IDeviceinfoService;
+import com.supervisions.modules.service.ILogininforService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
@@ -29,10 +33,12 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * box接口
  */
+//@Api(value="盒子controller",tags={"工控机接口"})
 @RestController
 @RequestMapping("/box")
 public class BoxController
@@ -41,36 +47,46 @@ public class BoxController
 
     @Autowired
     private IBoxService boxService;
+    @Autowired
+    private IDeviceinfoService deviceinfoService;
+    @Autowired
+    private ILogininforService logininforService;
 
-    @ApiOperation(value = "激活设备", notes = "激活设备")
+    @ApiOperation(value = "上线设备", notes = "上线设备")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "deviceSN", value = "设备序列号", required = true, dataType = "String", paramType = "query")
+            @ApiImplicitParam(name = "deviceSN", value = "序列号", required = true, dataType = "String", paramType = "query"),
+            @ApiImplicitParam(name = "json", value = "格式：{\"deviceID\":\"\"}", required = true, dataType = "json", paramType = "body")
     })
     @Transactional(rollbackFor = Exception.class)
-    @PostMapping("/activateDevice")
-    public Result activateDevice(@RequestBody(required = false) String data, @RequestParam(required = false) String deviceSN)
+    @PostMapping("/onlineDevice")
+    public Result onlineDevice(@RequestBody(required = false) String json, @RequestParam(required = false) String deviceSN)
     {
         try
         {
-            if(StringUtils.isEmpty(data)||StringUtils.isEmpty(deviceSN)){
+            if(StringUtils.isEmpty(json)||StringUtils.isEmpty(deviceSN)){
                 return Result.errorResult("缺少参数");
             }
-            JsonObject jsonObject = new JsonParser().parse(data).getAsJsonObject();
+            JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
             String deviceUnique = jsonObject.get("deviceID").getAsString();
             List<Deviceinfo> deviceinfos = boxService.activateDevice(deviceSN);
             if (deviceinfos.size() == 1)
             {
                 Deviceinfo deviceinfo = deviceinfos.get(0);
-                String publicKey = deviceinfo.getDevicePublickey();
-                if(RSAUtils.publicDecrypt(deviceUnique,RSAUtils.getPublicKey(deviceinfo.getDevicePublickey())).equals(deviceinfo.getDeviceUnique()))
+                //String publicKey = deviceinfo.getDevicePublickey();
+                //if(RSAUtils.publicDecrypt(deviceUnique,RSAUtils.getPublicKey(deviceinfo.getDevicePublickey())).equals(deviceinfo.getDeviceUnique()))
+                if(deviceUnique.equals(deviceinfo.getDeviceUnique()))
                 {
-                    if (!deviceinfo.getIsActivated().equals(0))
+                    /*if (!deviceinfo.getIsActivated().equals(0))
                     {
                         return Result.errorResult("序列号已激活，请勿重复激活");
-                    }
+                    }*/
+                    deviceinfo.setStatus("0"); // 激活
                     deviceinfo.setIsActivated(1); // 激活
                     boxService.save(deviceinfo);
-                    return Result.successResult(RSAUtils.publicEncrypt("success", RSAUtils.getPublicKey(publicKey)));
+                    String token = this.saveToken(0,deviceinfo.getId());
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("token",token);
+                    return Result.successResult(map);
                 }
                 return Result.errorResult("参数错误");
             }
@@ -86,6 +102,96 @@ public class BoxController
             log.error(e.getMessage());
             return Result.errorResult();
         }
+    }
+
+    @ApiOperation(value = "激活设备", notes = "激活设备")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "token", value = "token", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "deviceSN", value = "序列号", required = true, dataType = "String", paramType = "query")
+    })
+    @Transactional(rollbackFor = Exception.class)
+    @PostMapping("/activateDevice")
+    public Result activateDevice(@RequestParam(required = false) String deviceSN)
+    {
+        try
+        {
+            if(StringUtils.isEmpty(deviceSN)){
+                return Result.errorResult("缺少参数");
+            }
+            List<Deviceinfo> deviceinfos = boxService.activateDevice(deviceSN);
+            if (deviceinfos.size() == 1)
+            {
+                Deviceinfo deviceinfo = deviceinfos.get(0);
+                if(deviceinfo!=null)
+                {
+                    deviceinfo.setStatus("0");
+                    boxService.save(deviceinfo);
+                    return Result.successResult("0");
+                }
+            }
+            return Result.errorResult("序列号不存在");
+        }
+        catch (RuntimeException e)
+        {
+            log.error(e.getMessage());
+            return Result.errorResult("参数错误");
+        }
+        catch (Exception e)
+        {
+            log.error(e.getMessage());
+            return Result.errorResult();
+        }
+    }
+
+    @ApiOperation(value = "上报比赛结果", notes = "上报比赛结果")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "token", value = "token", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "deviceSN", value = "序列号", required = true, dataType = "String", paramType = "query"),
+            @ApiImplicitParam(name = "json", value = "格式：", required = true, dataType = "String", paramType = "body")
+    })
+    @Transactional(rollbackFor = Exception.class)
+    @PostMapping("/reportedCompetition")
+    public Result reportedCompetition(@RequestBody(required = false) String json, @RequestParam(required = false) String deviceSN)
+    {
+        try
+        {
+            if(StringUtils.isEmpty(json)||StringUtils.isEmpty(deviceSN)){
+                return Result.errorResult("缺少参数");
+            }
+            JsonObject jsonObject = new JsonParser().parse(json).getAsJsonObject();
+            return Result.successResult("success");
+        }
+        catch (RuntimeException e)
+        {
+            log.error(e.getMessage());
+            return Result.errorResult("参数错误");
+        }
+        catch (Exception e)
+        {
+            log.error(e.getMessage());
+            return Result.errorResult();
+        }
+    }
+
+
+
+    @Transactional(rollbackFor = Exception.class)
+    public String saveToken(Integer tokenType,Long deviceId) {
+        String token = UUID.randomUUID().toString();
+
+        // 保存token
+        Logininfor logininfor = logininforService.selectLogininforByTypeAndDeviceId(tokenType,deviceId);
+        if(null == logininfor){
+            Logininfor logininfor1 = new Logininfor();
+            logininfor1.setType(tokenType);
+            logininfor1.setToken(token);
+            logininfor1.setDeviceId(deviceId);
+            logininforService.save(logininfor1);
+        }else{
+            logininfor.setToken(token);
+            logininforService.save(logininfor);
+        }
+        return token;
     }
 
 }

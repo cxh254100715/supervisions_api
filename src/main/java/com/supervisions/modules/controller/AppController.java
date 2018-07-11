@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * app接口
  */
+//@Api(value="APPcontroller",tags={"app接口"})
 @RestController
 @RequestMapping("/app")
 public class AppController
@@ -37,7 +38,7 @@ public class AppController
 
     @ApiOperation(value="获取最新版本", notes="获取最新版本")
     @ApiImplicitParams({
-            @ApiImplicitParam(name = "type", value = "类型（0:android 1:box）", required = true, dataType = "int", paramType = "query"),
+            @ApiImplicitParam(name = "type", value = "类型（0:box 1:android）", required = true, dataType = "int", paramType = "query"),
             @ApiImplicitParam(name = "versionCode", value = "版本号", required = true, dataType = "string", paramType = "query")
     })
     @GetMapping("/checkVersionUpdate")
@@ -49,7 +50,7 @@ public class AppController
             Versions versions = appService.getMaxCode(type);
             if (versions!=null && Double.valueOf(versions.getVersionCode()) > Double.valueOf(versionCode))
             {
-                map.put("type",type==0?"android":"box");
+                map.put("type",type==0?"box":"android");
                 map.put("versionCode",versions.getVersionCode());
                 map.put("url",versions.getUrl());
                 return Result.successResult(map);

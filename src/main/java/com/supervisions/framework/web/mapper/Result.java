@@ -1,7 +1,11 @@
 package com.supervisions.framework.web.mapper;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.io.Serializable;
 
+@ApiModel(description= "返回响应数据")
 public class Result implements Serializable{
 
 	private static final long serialVersionUID = 1L;
@@ -13,16 +17,19 @@ public class Result implements Serializable{
 	/**
 	 * 状态码 (0成功  1失败)
 	 */
+	@ApiModelProperty(value = "状态码 (0成功  1失败)")
 	private String code;
 	
 	/**
 	 * 返回数据
 	 */
+	@ApiModelProperty(value = "成功返回的数据")
 	private Object data;
 	
 	/**
 	 * 错误信息
 	 */
+	@ApiModelProperty(value = "错误信息")
 	private String msg;
 
 	public String getCode() {

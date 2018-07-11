@@ -22,6 +22,8 @@
         <result property="remark"	column="remark"	/>
         <result property="deviceUnique"	column="device_unique"	/>
         <result property="devicePublickey"	column="device_publickey"	/>
+        <result property="lastOnlineTime"	column="last_online_time"	/>
+
         </resultMap>
 
     <select id="selectDeviceinfoBydeviceSn" parameterType="String" resultMap="DeviceinfoResult">
@@ -32,8 +34,10 @@
     <update id="updateDeviceinfo" parameterType="Deviceinfo">
         update dev_device_info
         <set>
-			is_activated = #{isActivated}
-			</set>
+            <if test="isActivated != null">is_activated = #{isActivated},</if>
+            <if test="status != null">status = #{status},</if>
+            last_online_time = #{lastOnlineTime}
+        </set>
         where 1=1
         and id = #{id}
     </update>

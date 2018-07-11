@@ -18,6 +18,7 @@ import com.supervisions.modules.service.ITenDeviceService;
 import com.supervisions.modules.service.ITenScanlogService;
 import com.supervisions.modules.service.ITenUserService;
 import com.supervisions.modules.utils.WeixinCommenUtil;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
@@ -38,6 +39,7 @@ import java.util.Map;
 /**
  * 微信接口
  */
+//@Api(value="微信controller",tags={"微信接口"})
 @RestController
 @RequestMapping("/wx")
 public class WeixinController {

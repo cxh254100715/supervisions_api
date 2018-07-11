@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.supervisions.modules.dao.ILogininforDao">
+
+    <resultMap type="Logininfor" id="LogininforResult">
+        <id     property="id"	column="id"	/>
+        <result property="createTime"	column="create_time"	/>
+        <result property="updateTime"	column="update_time"	/>
+        <result property="version"	column="version"	/>
+        <result property="token"	column="token"	/>
+        <result property="deviceId"	column="device_id"	/>
+        <result property="type"	column="type"	/>
+    </resultMap>
+
+    <select id="selectLogininforByTypeAndDeviceId" resultMap="LogininforResult">
+		select *
+		from dev_logininfor
+		where device_id = #{deviceId, jdbcType=INTEGER} and type = #{type, jdbcType=INTEGER}
+	</select>
+
+    <select id="selectLogininforByTokenAndDeviceSN" parameterType="String" resultMap="LogininforResult">
+		select *
+		from dev_logininfor dl left join dev_device_info di on dl.device_id = di.id
+		where dl.token = #{token, jdbcType=VARCHAR} and di.device_sn = #{deviceSN, jdbcType=VARCHAR}
+	</select>
+
+    <update id="update" parameterType="Logininfor">
+        update dev_logininfor
+        <set>
+            update_time = #{updateTime},
+            version = #{version},
+            token = #{token},
+            device_id = #{deviceId}
+        </set>
+        where 1=1
+        and id = #{id} and version = #{version}-1
+    </update>
+
+    <insert id="insert" parameterType="Logininfor">
+        <selectKey resultType="java.lang.Long" keyProperty="id" order="BEFORE" >
+            select nextval('dev_logininfor_id');
+        </selectKey>
+        insert into dev_logininfor(<trim suffixOverrides=",">
+        id,
+        create_time,
+        version,
+        token,
+        device_id,
+        type
+    </trim>
+        )values(<trim suffixOverrides=",">
+        #{id},
+        #{createTime},
+        #{version},
+        #{token},
+        #{deviceId},
+        #{type}
+    </trim>
+        )
+    </insert>
+
+</mapper>

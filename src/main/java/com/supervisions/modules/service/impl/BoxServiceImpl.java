@@ -6,6 +6,7 @@ import com.supervisions.modules.service.IBoxService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 @Service("boxService")
@@ -25,6 +26,7 @@ public class BoxServiceImpl implements IBoxService
     {
         int count = 0;
         if(deviceinfo.getId()!=null){
+            deviceinfo.setLastOnlineTime(new Date());
             deviceinfoDao.updateDeviceinfo(deviceinfo);
         }
         return count;
